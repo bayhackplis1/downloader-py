@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Downloader Pro</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #141414;
+            color: #ffffff;
+        }
+        header {
+            background-color: #e50914;
+            padding: 20px;
+            text-align: center;
+            color: #ffffff;
+            font-size: 2rem;
+            text-shadow: 2px 2px 5px #000;
+        }
+        main {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+            background: #222;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+        }
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input, button {
+            padding: 10px;
+            margin: 5px 0;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+        }
+        input {
+            background: #333;
+            color: #fff;
+        }
+        button {
+            background-color: #e50914;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #f40612;
+        }
+        .resultados, .progreso {
+            margin-top: 20px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 10px;
+            background: #333;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        li:hover {
+            background: #444;
+        }
+        .descargar {
+            padding: 5px 10px;
+            background: #e50914;
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .descargar:hover {
+            background: #f40612;
+        }
+    </style>
+</head>
+<body>
+    <header>Downloader Pro</header>
+    <main>
+        <h1>Buscar canciones o videos</h1>
+        <form id="formBusqueda">
+            <input type="text" id="busqueda" placeholder="Escriba el nombre de la canción o video..." required>
+            <button type="submit">Buscar</button>
+        </form>
+        <div class="progreso" id="progresoBusqueda"></div>
+        <div class="resultados" id="resultados"></div>
+    </main>
+    <script>
+        const formBusqueda = document.getElementById('formBusqueda');
+        const progresoBusqueda = document.getElementById('progresoBusqueda');
+        const resultadosDiv = document.getElementById('resultados');
+
+        formBusqueda.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            progresoBusqueda.textContent = 'Buscando, por favor espere...';
+            resultadosDiv.innerHTML = '';
+
+            const busqueda = document.getElementById('busqueda').value;
+            try {
+                const response = await fetch('/buscar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ busqueda })
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    progresoBusqueda.textContent = '';
+                    data.resultados.forEach((item, index) => {
+                        const li = document.createElement('li');
+                        li.innerHTML = `
+                            <span>${index + 1}. ${item.title}</span>
+                            <button class="descargar" data-url="${item.webpage_url}">Descargar</button>
+                        `;
+                        resultadosDiv.appendChild(li);
+                    });
+                } else {
+                    progresoBusqueda.textContent = 'No se encontraron resultados.';
+                }
+            } catch (error) {
+                progresoBusqueda.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        resultadosDiv.addEventListener('click', async function(event) {
+            if (event.target.classList.contains('descargar')) {
+                const url = event.target.getAttribute('data-url');
+                progresoBusqueda.textContent = 'Descargando, por favor espere...';
+                try {
+                    const response = await fetch('/descargar', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({ enlace: url })
+                    });
+
+                    if (response.ok) {
+                        progresoBusqueda.textContent = 'Descarga completada.';
+                    } else {
+                        progresoBusqueda.textContent = 'Error en la descarga.';
+                    }
+                } catch (error) {
+                    progresoBusqueda.textContent = `Error: ${error.message}`;
+                }
+            }
+        });
+    </script>
+</body>
+</html>
