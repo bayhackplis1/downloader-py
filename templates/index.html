@@ -94,20 +94,32 @@
             <input type="text" id="busqueda" placeholder="Escriba el nombre de la canción o video..." required>
             <button type="submit">Buscar</button>
         </form>
+        <h2>Descargar mediante enlace</h2>
+        <form id="formEnlace">
+            <input type="text" id="enlace" placeholder="Pega el enlace del video aquí..." required>
+            <button type="submit">Descargar</button>
+        </form>
         <div class="progreso" id="progresoBusqueda"></div>
         <div class="resultados" id="resultados"></div>
     </main>
     <script>
         const formBusqueda = document.getElementById('formBusqueda');
+        const formEnlace = document.getElementById('formEnlace');
         const progresoBusqueda = document.getElementById('progresoBusqueda');
         const resultadosDiv = document.getElementById('resultados');
 
+        // Buscar canciones o videos
         formBusqueda.addEventListener('submit', async function(event) {
             event.preventDefault();
             progresoBusqueda.textContent = 'Buscando, por favor espere...';
             resultadosDiv.innerHTML = '';
 
-            const busqueda = document.getElementById('busqueda').value;
+            const busqueda = document.getElementById('busqueda').value.trim();
+            if (!busqueda) {
+                progresoBusqueda.textContent = 'Por favor, escribe algo para buscar.';
+                return;
+            }
+
             try {
                 const response = await fetch('/buscar', {
                     method: 'POST',
@@ -118,6 +130,10 @@
                 if (response.ok) {
                     const data = await response.json();
                     progresoBusqueda.textContent = '';
+                    if (data.resultados.length === 0) {
+                        progresoBusqueda.textContent = 'No se encontraron resultados.';
+                        return;
+                    }
                     data.resultados.forEach((item, index) => {
                         const li = document.createElement('li');
                         li.innerHTML = `
@@ -127,13 +143,43 @@
                         resultadosDiv.appendChild(li);
                     });
                 } else {
-                    progresoBusqueda.textContent = 'No se encontraron resultados.';
+                    const errorData = await response.json();
+                    progresoBusqueda.textContent = `Error: ${errorData.error || 'No se encontraron resultados.'}`;
                 }
             } catch (error) {
                 progresoBusqueda.textContent = `Error: ${error.message}`;
             }
         });
 
+        // Descargar directamente desde un enlace
+        formEnlace.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            progresoBusqueda.textContent = 'Descargando desde el enlace, por favor espere...';
+
+            const enlace = document.getElementById('enlace').value.trim();
+            if (!enlace) {
+                progresoBusqueda.textContent = 'Por favor, pega un enlace válido.';
+                return;
+            }
+
+            try {
+                const response = await fetch('/descargar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: new URLSearchParams({ enlace })
+                });
+
+                if (response.ok) {
+                    progresoBusqueda.textContent = 'Descarga completada.';
+                } else {
+                    progresoBusqueda.textContent = 'Error en la descarga.';
+                }
+            } catch (error) {
+                progresoBusqueda.textContent = `Error: ${error.message}`;
+            }
+        });
+
+        // Descargar desde resultados
         resultadosDiv.addEventListener('click', async function(event) {
             if (event.target.classList.contains('descargar')) {
                 const url = event.target.getAttribute('data-url');
