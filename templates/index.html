@@ -10,7 +10,9 @@
             font-family: Arial, sans-serif;
             background-color: #141414;
             color: #ffffff;
+            overflow: hidden; /* Asegura que el fondo animado ocupe toda la pantalla */
         }
+
         header {
             background-color: #e50914;
             padding: 20px;
@@ -19,6 +21,7 @@
             font-size: 2rem;
             text-shadow: 2px 2px 5px #000;
         }
+
         main {
             max-width: 800px;
             margin: 20px auto;
@@ -26,14 +29,21 @@
             background: #222;
             border-radius: 10px;
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.6);
+            z-index: 1;
+            position: relative;
+            max-height: 80%;
+            overflow-y: auto;
         }
+
         h1 {
             font-size: 1.5rem;
             margin-bottom: 10px;
         }
+
         form {
             margin-bottom: 20px;
         }
+
         input, button {
             padding: 10px;
             margin: 5px 0;
@@ -41,26 +51,34 @@
             border: none;
             border-radius: 5px;
         }
+
         input {
             background: #333;
             color: #fff;
         }
+
         button {
             background-color: #e50914;
             color: #fff;
             font-weight: bold;
             cursor: pointer;
         }
+
         button:hover {
             background-color: #f40612;
         }
-        .resultados, .progreso {
+
+        .resultados {
             margin-top: 20px;
+            max-height: 200px;
+            overflow-y: auto; /* Contenedor desplazable para resultados */
         }
+
         ul {
             list-style: none;
             padding: 0;
         }
+
         li {
             padding: 10px;
             background: #333;
@@ -70,9 +88,11 @@
             justify-content: space-between;
             align-items: center;
         }
+
         li:hover {
             background: #444;
         }
+
         .descargar {
             padding: 5px 10px;
             background: #e50914;
@@ -81,12 +101,25 @@
             border-radius: 5px;
             cursor: pointer;
         }
+
         .descargar:hover {
             background: #f40612;
+        }
+
+        /* Fondo animado estilo Matrix */
+        #matrix {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: black;
+            z-index: -1;
         }
     </style>
 </head>
 <body>
+    <canvas id="matrix"></canvas>
     <header>Downloader Pro</header>
     <main>
         <h1>Buscar canciones o videos</h1>
@@ -102,6 +135,7 @@
         <div class="progreso" id="progresoBusqueda"></div>
         <div class="resultados" id="resultados"></div>
     </main>
+
     <script>
         const formBusqueda = document.getElementById('formBusqueda');
         const formEnlace = document.getElementById('formEnlace');
@@ -200,6 +234,43 @@
                     progresoBusqueda.textContent = `Error: ${error.message}`;
                 }
             }
+        });
+
+        // Script para animación estilo Matrix
+        const canvas = document.getElementById('matrix');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const letters = '0123456789ABCDEF';
+        const fontSize = 16;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
+
+        function drawMatrix() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#33ff33';
+            ctx.font = `${fontSize}px monospace`;
+
+            drops.forEach((y, index) => {
+                const text = letters.charAt(Math.floor(Math.random() * letters.length));
+                const x = index * fontSize;
+                ctx.fillText(text, x, y * fontSize);
+
+                if (y * fontSize > canvas.height && Math.random() > 0.975) {
+                    drops[index] = 0;
+                }
+                drops[index]++;
+            });
+        }
+
+        setInterval(drawMatrix, 50);
+
+        // Redimensiona el canvas al cambiar el tamaño de la ventana
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         });
     </script>
 </body>
