@@ -52,13 +52,17 @@ def buscar():
         'format': 'bestaudio/best' if config["format"] == "mp3" else 'bestvideo+bestaudio',
         'noplaylist': True,
     }
-    
+
     estado_progreso["busqueda"] = "Buscando canciones..."
     try:
         with youtube_dl.YoutubeDL(ydl_opts) as ydl:
             resultados = ydl.extract_info(f"ytsearch{config['search_limit']}:{busqueda}", download=False)
             estado_progreso["busqueda"] = "Búsqueda completada."
             if 'entries' in resultados and len(resultados['entries']) > 0:
+                # Añadir detalles como duración y tamaño
+                for entry in resultados['entries']:
+                    entry['duration_formatted'] = str(entry['duration'] // 60) + 'm ' + str(entry['duration'] % 60) + 's'
+                    entry['size'] = f'{round(entry.get("filesize", 0) / (1024 * 1024), 2)} MB' if 'filesize' in entry else 'Desconocido'
                 return jsonify({'resultados': resultados['entries']})
             else:
                 estado_progreso["busqueda"] = "No se encontraron resultados."
